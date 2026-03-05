@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { ApiService, SummaryRow } from '../../services/api.service';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import {
   Chart as ChartJS,
   DoughnutController,
@@ -36,7 +37,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   loading = true;
   error: string | null = null;
   summaryRows: SummaryRow[] = [];
-  summary: { totalEmployees: number; totalPresentDays: number } | null = null;
+  summary: { totalEmployees: number; totalPresentDays: number; totalAbsentDays: number; totalRecords: number } | null = null;
   doughnutChart: ChartJS | null = null;
   barChart: ChartJS | null = null;
   dataLoaded = false;
@@ -52,13 +53,15 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     console.log('Dashboard OnInit - starting data load');
-    this.api.getAttendanceSummary().subscribe({
-      next: (rows) => {
+    forkJoin([this.api.getAttendanceSummary(), this.api.getDashboardSummary()]).subscribe({
+      next: ([rows, totals]) => {
         console.log('Dashboard - data loaded:', rows);
         this.summaryRows = rows;
         this.summary = {
           totalEmployees: rows.length,
-          totalPresentDays: rows.reduce((s, r) => s + (r.present_days ?? 0), 0),
+          totalPresentDays: totals.total_present ?? 0,
+          totalAbsentDays: totals.total_absent ?? 0,
+          totalRecords: totals.total_records ?? 0,
         };
         this.dataLoaded = true;
         this.loading = false;
@@ -326,13 +329,15 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     console.log('Dashboard - refreshing data');
     this.loading = true;
     this.error = null;
-    this.api.getAttendanceSummary().subscribe({
-      next: (rows) => {
+    forkJoin([this.api.getAttendanceSummary(), this.api.getDashboardSummary()]).subscribe({
+      next: ([rows, totals]) => {
         console.log('Dashboard - refreshed data:', rows);
         this.summaryRows = rows;
         this.summary = {
           totalEmployees: rows.length,
-          totalPresentDays: rows.reduce((s, r) => s + (r.present_days ?? 0), 0),
+          totalPresentDays: totals.total_present ?? 0,
+          totalAbsentDays: totals.total_absent ?? 0,
+          totalRecords: totals.total_records ?? 0,
         };
         this.loading = false;
         this.cdr.detectChanges();

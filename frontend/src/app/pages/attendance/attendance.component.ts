@@ -21,7 +21,7 @@ import { ApiService, Employee, AttendanceRecord, AttendanceCreate } from '../../
       <form (ngSubmit)="onMarkAttendance()" style="max-width: 400px;">
         <div class="form-group">
           <label class="label">Employee</label>
-          <select class="select" [(ngModel)]="markForm.employee_id" name="employee_id" required>
+          <select class="select" [(ngModel)]="markForm.employee" name="employee" required>
             <option [ngValue]="null" disabled>Select employee</option>
             @for (e of employees; track e.id) {
               <option [ngValue]="e.id">{{ e.employee_id }} – {{ e.full_name }}</option>
@@ -101,6 +101,7 @@ export class AttendanceComponent implements OnInit {
   filterEmployeeId: number | null = null;
   filterDate: string | null = null;
   markForm: AttendanceCreate = {
+    employee: 0 as unknown as number,
     employee_id: 0 as unknown as number,
     date: new Date().toISOString().slice(0, 10),
     status: 'Present',
@@ -112,8 +113,8 @@ export class AttendanceComponent implements OnInit {
     this.api.getEmployees().subscribe({
       next: (list) => {
         this.employees = list;
-        if (list.length && !this.markForm.employee_id) {
-          this.markForm.employee_id = list[0].id;
+        if (list.length && !this.markForm.employee) {
+          this.markForm.employee = list[0].id;
         }
       },
     });
@@ -142,11 +143,12 @@ export class AttendanceComponent implements OnInit {
     this.markError = null;
     this.markSuccess = null;
     const payload: AttendanceCreate = {
-      employee_id: Number(this.markForm.employee_id),
+      employee: Number(this.markForm.employee),
+      employee_id: Number(this.markForm.employee),
       date: String(this.markForm.date),
       status: this.markForm.status,
     };
-    if (!payload.employee_id || !payload.date) {
+    if (!payload.employee || !payload.date) {
       this.markError = 'Employee and date are required.';
       return;
     }

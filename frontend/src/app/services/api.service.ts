@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, throwError } from 'rxjs';
 
-const API_BASE = 'https://your-backend-url-here.onrender.com';
+const API_BASE = '';
 
 // ========== Employee Interfaces ==========
 export interface Employee {
@@ -10,6 +10,7 @@ export interface Employee {
   employee_id: string;
   full_name: string;
   email: string;
+  department: string;
   department_id?: string;
   phone?: string;
   address?: string;
@@ -24,7 +25,8 @@ export interface EmployeeCreate {
   employee_id: string;
   full_name: string;
   email: string;
-  department_id: number;
+  department: string;
+  department_id?: number;
   phone?: string;
   address?: string;
   date_of_birth?: string;
@@ -36,7 +38,10 @@ export interface EmployeeCreate {
 // ========== Attendance Interfaces ==========
 export interface AttendanceRecord {
   id: number;
+  employee: number;
   employee_id: number;
+  employee_name: string;
+  employee_code: string;
   date: string;
   status: string;
   check_in_time?: string;
@@ -47,7 +52,8 @@ export interface AttendanceRecord {
 }
 
 export interface AttendanceCreate {
-  employee_id: number;
+  employee?: number;
+  employee_id?: number;
   date: string;
   status: 'Present' | 'Absent';
   check_in_time?: string;
@@ -61,6 +67,12 @@ export interface SummaryRow {
   department: string;
   present_days: number;
   total_records: number;
+}
+
+export interface DashboardSummary {
+  total_records: number;
+  total_present: number;
+  total_absent: number;
 }
 
 // ========== Department Interfaces ==========
@@ -170,19 +182,25 @@ export class ApiService {
 
   // ========== Employees ==========
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(API_BASE + '/api/employees').pipe(
+    return this.http.get<Employee[]>(API_BASE + '/api/employees/').pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
 
   getEmployee(id: number): Observable<Employee> {
-    return this.http.get<Employee>(API_BASE + '/api/employees/' + id).pipe(
+    return this.http.get<Employee>(API_BASE + '/api/employees/' + id + '/').pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
 
   addEmployee(body: EmployeeCreate): Observable<Employee> {
-    return this.http.post<Employee>(API_BASE + '/api/employees', body).pipe(
+    const payload = {
+      employee_id: body.employee_id,
+      full_name: body.full_name,
+      email: body.email,
+      department: body.department ?? String(body.department_id ?? ''),
+    };
+    return this.http.post<Employee>(API_BASE + '/api/employees/', payload).pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
@@ -194,7 +212,7 @@ export class ApiService {
   }
 
   deleteEmployee(id: number): Observable<void> {
-    return this.http.delete<void>(API_BASE + '/api/employees/' + id).pipe(
+    return this.http.delete<void>(API_BASE + '/api/employees/' + id + '/').pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
@@ -202,21 +220,50 @@ export class ApiService {
   // ========== Attendance ==========
   getAttendance(params?: { employeeId?: number; date?: string }): Observable<AttendanceRecord[]> {
     let httpParams = new HttpParams();
-    if (params?.employeeId != null) httpParams = httpParams.set('employeeId', params.employeeId);
+    if (params?.employeeId != null) httpParams = httpParams.set('employee_id', params.employeeId);
     if (params?.date) httpParams = httpParams.set('date', params.date);
-    return this.http.get<AttendanceRecord[]>(API_BASE + '/api/attendance', { params: httpParams }).pipe(
+    return this.http.get<AttendanceRecord[]>(API_BASE + '/api/attendance/', { params: httpParams }).pipe(
+      map((rows) => rows.map((row) => ({
+        ...row,
+        employee_id: row.employee_id ?? row.employee,
+        full_name: row.full_name ?? row.employee_name,
+        emp_code: row.emp_code ?? row.employee_code,
+      }))),
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
 
   markAttendance(body: AttendanceCreate): Observable<AttendanceRecord> {
-    return this.http.post<AttendanceRecord>(API_BASE + '/api/attendance', body).pipe(
+    const payload = {
+      employee: body.employee ?? body.employee_id,
+      date: body.date,
+      status: body.status,
+    };
+    return this.http.post<AttendanceRecord>(API_BASE + '/api/attendance/', payload).pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
 
   getAttendanceSummary(): Observable<SummaryRow[]> {
-    return this.http.get<SummaryRow[]>(API_BASE + '/api/attendance/summary').pipe(
+    return forkJoin([this.getEmployees(), this.getAttendance()]).pipe(
+      map(([employees, records]) => employees.map((employee) => {
+        const employeeRecords = records.filter((r) => (r.employee ?? r.employee_id) === employee.id);
+        const presentDays = employeeRecords.filter((r) => r.status === 'Present').length;
+        return {
+          id: employee.id,
+          employee_id: employee.employee_id,
+          full_name: employee.full_name,
+          department: employee.department,
+          present_days: presentDays,
+          total_records: employeeRecords.length,
+        };
+      })),
+      catchError((err) => throwError(() => this.getErrorMessage(err)))
+    );
+  }
+
+  getDashboardSummary(): Observable<DashboardSummary> {
+    return this.http.get<DashboardSummary>(API_BASE + '/api/dashboard/').pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
   }
@@ -368,7 +415,14 @@ export class ApiService {
     );
   }
 
-  private getErrorMessage(err: { error?: { detail?: string | unknown }; status?: number }): string {
+  private getErrorMessage(err: { error?: any; status?: number }): string {
+    if (typeof err.error === 'string' && err.error.trim()) return err.error;
+    if (typeof err.error?.error === 'string') return err.error.error;
+    if (err.error?.errors && typeof err.error.errors === 'object') {
+      const firstField = Object.keys(err.error.errors)[0];
+      const firstMsg = err.error.errors[firstField]?.[0];
+      if (firstMsg) return String(firstMsg);
+    }
     const detail = err.error?.detail;
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail)) {
@@ -376,6 +430,14 @@ export class ApiService {
       return msg || 'Validation failed';
     }
     if (detail && typeof detail === 'object' && 'message' in detail) return (detail as { message: string }).message;
-    return (err.error?.detail?.toString()) || ('Request failed (' + (err.status || 'error') + ')');
+    if (err.error && typeof err.error === 'object') {
+      try {
+        const raw = JSON.stringify(err.error);
+        if (raw && raw !== '{}') return raw;
+      } catch {
+        // ignore JSON parse failure and continue to fallback
+      }
+    }
+    return 'Request failed (' + (err.status || 'error') + ')';
   }
 }

@@ -24,10 +24,7 @@
       </div>
       <div class="form-group">
         <label class="label">Department</label>
-        <select class="input" [(ngModel)]="form.department_id" name="department_id" required>
-          <option value="" disabled selected>Select a department</option>
-          <option *ngFor="let d of departments" [ngValue]="d.id">{{ d.name }}</option>
-        </select>
+        <input type="text" class="input" [(ngModel)]="form.department" name="department" required placeholder="e.g. Engineering" />
       </div>
       <button type="submit" class="btn btn-primary">Add employee</button>
     </form>

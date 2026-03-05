@@ -134,34 +134,31 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
   `,
   styles: [`
     .page-container {
-      margin-left: 250px;
-      padding: 2rem;
-      background: #0f172a;
-      min-height: 100vh;
+      width: 100%;
     }
 
     .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       gap: 1rem;
+      flex-wrap: wrap;
     }
 
     .page-header h1 {
       margin: 0;
-      color: #f1f5f9;
-      font-size: 2rem;
+      color: var(--text);
+      font-size: clamp(1.35rem, 1.2rem + 0.8vw, 1.95rem);
     }
 
     .form-card {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
 
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1rem;
     }
 
@@ -175,7 +172,7 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
     }
 
     .form-group label {
-      color: #cbd5e1;
+      color: var(--text-muted);
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
@@ -183,11 +180,11 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
     .form-group input,
     .form-group textarea,
     .form-group select {
-      padding: 0.6rem;
-      background: #334155;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 6px;
-      color: #f1f5f9;
+      padding: 0.65rem 0.78rem;
+      background: var(--bg-input);
+      border: 1px solid rgba(120, 150, 255, 0.28);
+      border-radius: 10px;
+      color: var(--text);
       font-family: inherit;
     }
 
@@ -197,36 +194,14 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
     }
 
     .card {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
 
     .card h2 {
       margin-top: 0;
-      color: #f1f5f9;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-      padding-bottom: 1rem;
-    }
-
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      color: #cbd5e1;
-    }
-
-    .table thead {
-      background: rgba(56, 189, 248, 0.1);
-    }
-
-    .table th,
-    .table td {
-      padding: 1rem;
-      text-align: left;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      color: var(--text);
+      border-bottom: 1px solid rgba(120, 150, 255, 0.2);
+      padding-bottom: 0.7rem;
     }
 
     .status {
@@ -234,21 +209,22 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
       border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 600;
+      display: inline-flex;
     }
 
     .status-pending {
-      background: rgba(248, 113, 113, 0.2);
-      color: #fca5a5;
+      background: rgba(255, 125, 134, 0.2);
+      color: #ffd2d5;
     }
 
     .status-approved {
-      background: rgba(52, 211, 153, 0.2);
-      color: #6ee7b7;
+      background: rgba(51, 208, 155, 0.2);
+      color: #7bffd2;
     }
 
     .status-rejected {
-      background: rgba(248, 113, 113, 0.2);
-      color: #fca5a5;
+      background: rgba(255, 125, 134, 0.2);
+      color: #ffd2d5;
     }
 
     .action-buttons {
@@ -263,14 +239,14 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
     }
 
     .balance-card {
-      background: rgba(56, 189, 248, 0.1);
-      padding: 1.5rem;
-      border-radius: 8px;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(95, 124, 255, 0.1);
+      padding: 1.15rem;
+      border-radius: 12px;
+      border: 1px solid rgba(120, 150, 255, 0.3);
     }
 
     .balance-name {
-      color: #38bdf8;
+      color: #b7c8ff;
       font-weight: 600;
       font-size: 1rem;
       margin-bottom: 1rem;
@@ -288,49 +264,30 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
     .stat-value {
       display: block;
       font-size: 1.5rem;
-      color: #f1f5f9;
+      color: var(--text);
       font-weight: 700;
     }
 
     .stat-label {
       display: block;
       font-size: 0.75rem;
-      color: #94a3b8;
+      color: var(--text-muted);
       margin-top: 0.25rem;
     }
 
-    .btn {
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s;
-      font-size: 0.9rem;
-    }
-
-    .btn-primary {
-      background: #38bdf8;
-      color: #0f172a;
-    }
-
-    .btn-primary:hover {
-      background: #0ea5e9;
-    }
-
     .btn-success {
-      background: #34d399;
-      color: #0f172a;
+      background: linear-gradient(140deg, #66e2b9, #33d09b);
+      color: #0b1531;
     }
 
     .btn-danger {
-      background: #f87171;
-      color: #fff;
+      background: linear-gradient(140deg, rgba(255, 125, 134, 0.35), rgba(255, 92, 102, 0.28));
+      color: #ffe7e8;
     }
 
     .btn-secondary {
-      background: #64748b;
-      color: #fff;
+      background: rgba(120, 144, 192, 0.35);
+      color: #e6eeff;
     }
 
     .btn-sm {
@@ -338,10 +295,17 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
       font-size: 0.8rem;
     }
 
-    @media (max-width: 768px) {
-      .page-container {
-        margin-left: 0;
-        padding: 1rem;
+    @media (max-width: 820px) {
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .header-actions .btn {
+        width: 100%;
       }
     }
   `]

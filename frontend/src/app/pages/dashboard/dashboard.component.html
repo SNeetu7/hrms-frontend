@@ -14,7 +14,11 @@
     </div>
     <div class="summary-card" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(52, 211, 153, 0.05) 100%); border: 1px solid rgba(52, 211, 153, 0.3);">
       <div class="value" style="color: #34d399;">{{ summary?.totalPresentDays ?? 0 }}</div>
-      <div class="label" style="color: #94a3b8;">✓ Total Present Days</div>
+      <div class="label" style="color: #94a3b8;">✓ Total Present</div>
+    </div>
+    <div class="summary-card" style="background: linear-gradient(135deg, rgba(248, 113, 113, 0.15) 0%, rgba(248, 113, 113, 0.05) 100%); border: 1px solid rgba(248, 113, 113, 0.3);">
+      <div class="value" style="color: #f87171;">{{ summary?.totalAbsentDays ?? 0 }}</div>
+      <div class="label" style="color: #94a3b8;">✗ Total Absent</div>
     </div>
   </div>
 
