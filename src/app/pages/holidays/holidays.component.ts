@@ -11,7 +11,10 @@ import { ApiService, Holiday } from '../../services/api.service';
     <div class="page-container">
       <div class="page-header">
         <h1>🎉 Holiday Management</h1>
-        <button (click)="toggleNewHolidayForm()" class="btn btn-primary">+ Add Holiday</button>
+        <div class="header-actions">
+          <button (click)="seedIndianHolidays()" class="btn btn-secondary" *ngIf="holidays.length === 0">🇮🇳 Seed Indian Holidays</button>
+          <button (click)="toggleNewHolidayForm()" class="btn btn-primary">+ Add Holiday</button>
+        </div>
       </div>
 
       @if (showNewHolidayForm) {
@@ -20,7 +23,7 @@ import { ApiService, Holiday } from '../../services/api.service';
           <form (ngSubmit)="submitNewHoliday()" class="form-grid">
             <div class="form-group">
               <label>Holiday Name</label>
-              <input type="text" [(ngModel)]="newHoliday.name" name="name" required>
+              <input type="text" [(ngModel)]="newHoliday.name" name="name" required placeholder="e.g. Diwali">
             </div>
             <div class="form-group">
               <label>Date</label>
@@ -28,14 +31,14 @@ import { ApiService, Holiday } from '../../services/api.service';
             </div>
             <div class="form-group">
               <label>Type</label>
-              <select [(ngModel)]="newHoliday.is_national" name="is_national">
-                <option [value]="true">National</option>
-                <option [value]="false">Company</option>
+              <select [(ngModel)]="newHoliday.is_national" name="is_national" class="select">
+                <option [ngValue]="true">National</option>
+                <option [ngValue]="false">Company</option>
               </select>
             </div>
             <div class="form-group full-width">
               <label>Description</label>
-              <textarea [(ngModel)]="newHoliday.description" name="description" rows="2"></textarea>
+              <textarea [(ngModel)]="newHoliday.description" name="description" rows="2" placeholder="Brief description..."></textarea>
             </div>
             <div class="form-actions full-width">
               <button type="submit" class="btn btn-success">Add Holiday</button>
@@ -48,7 +51,10 @@ import { ApiService, Holiday } from '../../services/api.service';
       <div class="card">
         <h2>Holiday Calendar</h2>
         @if (holidays.length === 0) {
-          <div class="empty-state">No holidays found</div>
+          <div class="empty-state">
+            <p>No holidays found.</p>
+            <button (click)="seedIndianHolidays()" class="btn btn-secondary btn-sm">Seed Indian Holidays (2026)</button>
+          </div>
         } @else {
           <div class="holidays-list">
             @for (holiday of holidays; track holiday.id) {
@@ -62,8 +68,8 @@ import { ApiService, Holiday } from '../../services/api.service';
                 <div class="holiday-middle">
                   <h3>{{ holiday.name }}</h3>
                   <p>{{ holiday.description || 'No description' }}</p>
-                  <span class="badge" [class.national]="holiday.is_national">
-                    {{ holiday.is_national ? '🇮🇳 National' : '🏢 Company' }}
+                  <span class="status-badge" [class.present]="!holiday.is_national" [class.absent]="holiday.is_national">
+                    {{ holiday.is_national ? '🇮🇳 National Holiday' : '🏢 Company Holiday' }}
                   </span>
                 </div>
                 <div class="holiday-right">
@@ -78,10 +84,11 @@ import { ApiService, Holiday } from '../../services/api.service';
   `,
   styles: [`
     .page-container {
-      margin-left: 250px;
+      margin-left: 272px;
       padding: 2rem;
-      background: #0f172a;
+      background: #070d1d;
       min-height: 100vh;
+      color: #eaf0ff;
     }
 
     .page-header {
@@ -94,34 +101,39 @@ import { ApiService, Holiday } from '../../services/api.service';
 
     .page-header h1 {
       margin: 0;
-      color: #f1f5f9;
-      font-size: 2rem;
+      color: #f7faff;
+      font-size: clamp(1.35rem, 1.2rem + 0.8vw, 1.95rem);
+      font-weight: 800;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
     }
 
     .card {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      background: linear-gradient(160deg, rgba(16, 31, 61, 0.96), rgba(12, 24, 48, 0.96));
       padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      margin-bottom: 2rem;
-    }
-
-    .form-card {
-      margin-bottom: 2rem;
+      border-radius: 14px;
+      box-shadow: 0 14px 38px rgba(2, 8, 24, 0.45);
+      border: 1px solid rgba(120, 150, 255, 0.2);
+      backdrop-filter: blur(6px);
+      margin-bottom: 1.5rem;
     }
 
     .card h2 {
       margin-top: 0;
       color: #f1f5f9;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      font-size: 1.2rem;
+      border-bottom: 1px solid rgba(120, 150, 255, 0.1);
       padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
     .form-group {
@@ -134,20 +146,25 @@ import { ApiService, Holiday } from '../../services/api.service';
     }
 
     .form-group label {
-      color: #cbd5e1;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      font-weight: 700;
+      color: #9fb0d4;
+      margin-bottom: 0.38rem;
+      text-transform: uppercase;
     }
 
     .form-group input,
     .form-group textarea,
     .form-group select {
-      padding: 0.6rem;
-      background: #334155;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      border-radius: 6px;
-      color: #f1f5f9;
-      font-family: inherit;
+      padding: 0.65rem 0.78rem;
+      background: #112448;
+      border: 1px solid rgba(120, 150, 255, 0.28);
+      border-radius: 10px;
+      color: #eef4ff;
+      font-size: 0.95rem;
+      outline: none;
+      color-scheme: dark;
     }
 
     .form-actions {
@@ -158,23 +175,24 @@ import { ApiService, Holiday } from '../../services/api.service';
     .holidays-list {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
     .holiday-item {
       display: flex;
       gap: 1.5rem;
-      padding: 1.5rem;
-      background: rgba(56, 189, 248, 0.05);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      border-radius: 8px;
+      padding: 1.25rem;
+      background: rgba(95, 124, 255, 0.05);
+      border: 1px solid rgba(120, 150, 255, 0.15);
+      border-radius: 12px;
       transition: all 0.3s;
       align-items: center;
     }
 
     .holiday-item:hover {
-      background: rgba(56, 189, 248, 0.1);
-      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(95, 124, 255, 0.1);
+      border-color: rgba(120, 150, 255, 0.3);
+      transform: translateY(-2px);
     }
 
     .holiday-left {
@@ -182,23 +200,25 @@ import { ApiService, Holiday } from '../../services/api.service';
     }
 
     .holiday-date {
-      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-      padding: 1rem;
-      border-radius: 8px;
+      background: linear-gradient(140deg, #8ca5ff, #6f8aff);
+      padding: 0.75rem;
+      border-radius: 10px;
       text-align: center;
-      color: #fff;
-      min-width: 70px;
+      color: #0b1531;
+      min-width: 65px;
     }
 
     .date-day {
-      font-size: 1.8rem;
-      font-weight: 700;
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1;
     }
 
     .date-month {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 700;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.8);
+      margin-top: 0.2rem;
     }
 
     .holiday-middle {
@@ -206,67 +226,64 @@ import { ApiService, Holiday } from '../../services/api.service';
     }
 
     .holiday-middle h3 {
-      margin: 0 0 0.5rem 0;
-      color: #f1f5f9;
+      margin: 0 0 0.4rem 0;
+      color: #f7faff;
       font-size: 1.1rem;
     }
 
     .holiday-middle p {
       margin: 0 0 0.75rem 0;
-      color: #cbd5e1;
-      font-size: 0.9rem;
+      color: #9fb0d4;
+      font-size: 0.85rem;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      background: rgba(52, 211, 153, 0.2);
-      color: #6ee7b7;
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
-    .badge.national {
-      background: rgba(248, 113, 113, 0.2);
-      color: #fca5a5;
+    .status-badge.present {
+      background: rgba(51, 208, 155, 0.15);
+      color: #33d09b;
     }
 
-    .holiday-right {
-      flex-shrink: 0;
+    .status-badge.absent {
+      background: rgba(255, 125, 134, 0.15);
+      color: #ff7d86;
     }
 
     .btn {
-      padding: 0.6rem 1.2rem;
+      padding: 0.6rem 1.1rem;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s;
+      font-weight: 700;
+      transition: all 0.2s;
       font-size: 0.9rem;
     }
 
     .btn-primary {
-      background: #38bdf8;
-      color: #0f172a;
-    }
-
-    .btn-primary:hover {
-      background: #0ea5e9;
+      background: linear-gradient(140deg, #8ca5ff, #6f8aff);
+      color: #0b1531;
     }
 
     .btn-success {
-      background: #34d399;
-      color: #0f172a;
+      background: #33d09b;
+      color: #0b1531;
     }
 
     .btn-danger {
-      background: #f87171;
-      color: #fff;
+      background: rgba(255, 125, 134, 0.2);
+      color: #ff7d86;
+      border: 1px solid rgba(255, 125, 134, 0.3);
     }
 
     .btn-secondary {
-      background: #64748b;
-      color: #fff;
+      background: rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
     }
 
     .btn-sm {
@@ -276,19 +293,22 @@ import { ApiService, Holiday } from '../../services/api.service';
 
     .empty-state {
       text-align: center;
-      padding: 2rem;
-      color: #94a3b8;
+      padding: 3rem;
+      color: #9fb0d4;
+      font-style: italic;
+    }
+
+    @media (max-width: 1024px) {
+      .page-container {
+        margin-left: 0;
+        padding: 1.5rem;
+      }
     }
 
     @media (max-width: 768px) {
-      .page-container {
-        margin-left: 0;
-        padding: 1rem;
-      }
-
       .holiday-item {
-        flex-direction: column;
-        text-align: center;
+        flex-direction: row;
+        text-align: left;
       }
     }
   `]
@@ -331,6 +351,25 @@ export class HolidaysComponent implements OnInit {
         this.newHoliday = { name: '', date: '', description: '', is_national: true };
       },
       error: (err) => console.error('Error adding holiday:', err)
+    });
+  }
+
+  seedIndianHolidays() {
+    const indianHolidays = [
+      { name: 'Republic Day', date: '2026-01-26', description: 'National Holiday', is_national: true },
+      { name: 'Holi', date: '2026-03-04', description: 'Festival of Colors', is_national: true },
+      { name: 'Eid ul-Fitr', date: '2026-03-20', description: 'End of Ramadan', is_national: true },
+      { name: 'Independence Day', date: '2026-08-15', description: 'National Holiday', is_national: true },
+      { name: 'Gandhi Jayanti', date: '2026-10-02', description: 'Mahatma Gandhi Birthday', is_national: true },
+      { name: 'Dussehra', date: '2026-10-21', description: 'Victory of Good over Evil', is_national: true },
+      { name: 'Diwali', date: '2026-11-08', description: 'Festival of Lights', is_national: true },
+      { name: 'Christmas Day', date: '2026-12-25', description: 'Christian Festival', is_national: true }
+    ];
+
+    indianHolidays.forEach(h => {
+      this.api.addHoliday(h).subscribe({
+        next: () => this.loadHolidays()
+      });
     });
   }
 
