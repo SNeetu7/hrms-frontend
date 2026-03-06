@@ -1,5 +1,5 @@
 {
   "framework": "angular",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/hrms-lite/browser"
+  "outputDirectory": "dist/hrms-lite"
 }
