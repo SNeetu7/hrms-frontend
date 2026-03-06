@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, AttendanceReport, DailyStatistics, DepartmentStatistics, Employee } from '../../services/api.service';
+import { ApiService, AttendanceRecord, AttendanceReport, DailyStatistics, DepartmentStatistics, Employee } from '../../services/api.service';
 import { Chart as ChartJS, BarController, LineController, PieController, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(BarController, LineController, PieController, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -79,6 +79,45 @@ ChartJS.register(BarController, LineController, PieController, CategoryScale, Li
             <div class="stat-label">On Leave</div>
           </div>
         </div>
+      </div>
+
+      <!-- Daily Employee List -->
+      <div class="card" *ngIf="!selectedEmployeeId">
+        <h2>Daily Employee Attendance Detail - {{ selectedDate }}</h2>
+        @if (employees.length === 0) {
+          <div class="empty-state">No employee data found</div>
+        } @else {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employee ID</th>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Check In</th>
+                  <th>Check Out</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (emp of getDailyEmployeeStatus(); track emp.id) {
+                  <tr>
+                    <td>{{ emp.employee_id }}</td>
+                    <td>{{ emp.full_name }}</td>
+                    <td>{{ emp.department }}</td>
+                    <td>
+                      <span class="status-badge" [class.present]="emp.status === 'Present'" [class.absent]="emp.status === 'Absent'">
+                        {{ emp.status }}
+                      </span>
+                    </td>
+                    <td>{{ emp.check_in }}</td>
+                    <td>{{ emp.check_out }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
 
       <!-- Employee Specific Stats -->
@@ -280,18 +319,12 @@ ChartJS.register(BarController, LineController, PieController, CategoryScale, Li
       font-size: 0.95rem;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
       outline: none;
+      color-scheme: dark;
     }
 
     .input:focus, .select:focus {
       border-color: #85a0ff;
       box-shadow: 0 0 0 3px rgba(95, 124, 255, 0.22);
-    }
-
-    /* Fix white background for options */
-    .select option {
-      background-color: #112448;
-      color: #eef4ff;
-      padding: 10px;
     }
 
     .stats-grid {
@@ -378,6 +411,24 @@ ChartJS.register(BarController, LineController, PieController, CategoryScale, Li
 
     .table td.success { color: #33d09b; font-weight: 600; }
     .table td.danger { color: #ff7d86; font-weight: 600; }
+
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-badge.present {
+      background: rgba(51, 208, 155, 0.15);
+      color: #33d09b;
+    }
+
+    .status-badge.absent {
+      background: rgba(255, 125, 134, 0.15);
+      color: #ff7d86;
+    }
 
     .progress-bar {
       background: rgba(148, 163, 184, 0.15);
@@ -499,6 +550,7 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   selectedEmployeeId: number | null = null;
 
   dailyStats: DailyStatistics | null = null;
+  dailyAttendanceRecords: AttendanceRecord[] = [];
   monthlyReports: AttendanceReport[] = [];
   deptStats: DepartmentStatistics[] = [];
   employees: Employee[] = [];
@@ -536,7 +588,10 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
   loadEmployees() {
     this.api.getEmployees().subscribe({
-      next: (data) => this.employees = data,
+      next: (data) => {
+        this.employees = data;
+        this.loadDailyStatistics(); // Reload to match records with employees
+      },
       error: (err) => console.error('Error loading employees:', err)
     });
   }
@@ -548,6 +603,27 @@ export class ReportsComponent implements OnInit, AfterViewInit {
         this.createDailyChart();
       },
       error: (err) => console.error('Error loading daily statistics:', err)
+    });
+
+    this.api.getAttendance({ date: this.selectedDate }).subscribe({
+      next: (data) => {
+        this.dailyAttendanceRecords = data;
+      },
+      error: (err) => console.error('Error loading daily attendance:', err)
+    });
+  }
+
+  getDailyEmployeeStatus() {
+    return this.employees.map(emp => {
+      const record = this.dailyAttendanceRecords.find(r => 
+        (r.employee_id === emp.id) || (r.employee === emp.id)
+      );
+      return {
+        ...emp,
+        status: record ? record.status : 'Absent',
+        check_in: record?.check_in_time || '-',
+        check_out: record?.check_out_time || '-'
+      };
     });
   }
 

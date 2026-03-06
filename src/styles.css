@@ -31,6 +31,7 @@ body {
   color: var(--text);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
   background:
     radial-gradient(1000px 500px at 85% -10%, rgba(95, 124, 255, 0.2), transparent 55%),
     radial-gradient(800px 420px at -10% 25%, rgba(44, 185, 255, 0.15), transparent 52%),
@@ -128,12 +129,12 @@ body {
   padding: 0.65rem 0.78rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
+  color-scheme: dark;
 }
 
 .select option {
-  background-color: #0d1730; /* Dark theme background */
+  background-color: #0d1730;
   color: #eaf0ff;
-  padding: 10px;
 }
 
 .input:focus, .select:focus {
