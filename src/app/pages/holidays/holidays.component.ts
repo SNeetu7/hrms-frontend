@@ -39,7 +39,8 @@ import { ApiService, Holiday } from '../../services/api.service';
               <div class="calendar-day" 
                    [class.other-month]="!day.isCurrentMonth"
                    [class.today]="isToday(day.date)"
-                   [class.has-holiday]="day.holidays.length > 0">
+                   [class.has-holiday]="day.holidays.length > 0"
+                   [class.national]="hasNationalHoliday(day.holidays)">
                 <span class="day-number">{{ day.date.getDate() }}</span>
                 <div class="day-content">
                   @for (h of day.holidays; track h.id) {
@@ -207,15 +208,38 @@ import { ApiService, Holiday } from '../../services/api.service';
       opacity: 0.3;
     }
 
-    .calendar-day.today {
-      background: rgba(95, 124, 255, 0.08);
-      border: 1px solid rgba(95, 124, 255, 0.3);
+    .calendar-day.has-holiday {
+      background: rgba(51, 208, 153, 0.08);
+      box-shadow: inset 0 0 15px rgba(51, 208, 153, 0.15);
+      border-left: 3px solid rgba(51, 208, 153, 0.5);
+      position: relative;
+    }
+
+    .calendar-day.has-holiday::after {
+      content: '🎉';
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+    }
+
+    .calendar-day.has-holiday.national {
+      background: rgba(255, 125, 134, 0.08);
+      box-shadow: inset 0 0 15px rgba(255, 125, 134, 0.15);
+      border-left: 3px solid rgba(255, 125, 134, 0.5);
+    }
+
+    .calendar-day.has-holiday.national::after {
+      content: '🇮🇳';
     }
 
     .day-number {
       font-size: 0.9rem;
       font-weight: 600;
       color: #9fb0d4;
+      z-index: 1;
     }
 
     .today .day-number {
@@ -395,10 +419,11 @@ export class HolidaysComponent implements OnInit {
     // Previous month padding
     const prevLastDay = new Date(year, month, 0);
     for (let i = firstDay.getDay(); i > 0; i--) {
+      const d = new Date(year, month - 1, prevLastDay.getDate() - i + 1);
       days.push({
-        date: new Date(year, month - 1, prevLastDay.getDate() - i + 1),
+        date: d,
         isCurrentMonth: false,
-        holidays: []
+        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
       });
     }
     
@@ -415,14 +440,19 @@ export class HolidaysComponent implements OnInit {
     // Next month padding
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
       days.push({
-        date: new Date(year, month + 1, i),
+        date: d,
         isCurrentMonth: false,
-        holidays: []
+        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
       });
     }
     
     this.calendarDays = days;
+  }
+
+  hasNationalHoliday(holidays: any[]): boolean {
+    return holidays.some(h => h.is_national);
   }
 
   isSameDay(d1: Date, d2: Date) {

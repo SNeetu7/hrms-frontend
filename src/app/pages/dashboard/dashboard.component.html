@@ -1,4 +1,4 @@
-<h1 class="page-title">Dashboard</h1>
+<h1 class="page-title">HRMS Dashboard</h1>
 
 @if (loading) {
   <div class="loading-spinner"></div>
@@ -13,77 +13,88 @@
       <div class="label" style="color: #94a3b8;">👥 Total Employees</div>
     </div>
     <div class="summary-card" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(52, 211, 153, 0.05) 100%); border: 1px solid rgba(52, 211, 153, 0.3);">
-      <div class="value" style="color: #34d399;">{{ summary?.totalPresentDays ?? 0 }}</div>
-      <div class="label" style="color: #94a3b8;">✓ Total Present</div>
+      <div class="value" style="color: #34d399;">{{ getAttendanceRate() }}</div>
+      <div class="label" style="color: #94a3b8;">📈 Attendance Rate</div>
     </div>
-    <div class="summary-card" style="background: linear-gradient(135deg, rgba(248, 113, 113, 0.15) 0%, rgba(248, 113, 113, 0.05) 100%); border: 1px solid rgba(248, 113, 113, 0.3);">
-      <div class="value" style="color: #f87171;">{{ summary?.totalAbsentDays ?? 0 }}</div>
-      <div class="label" style="color: #94a3b8;">✗ Total Absent</div>
+    <div class="summary-card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(168, 85, 247, 0.3);">
+      <div class="value" style="color: #a855f7; font-size: 1.2rem;">{{ getTopPerformer() }}</div>
+      <div class="label" style="color: #94a3b8;">⭐ Top Performer</div>
     </div>
   </div>
 
-  <div class="card">
-    <h2 style="margin-bottom: 1rem; font-size: 1.1rem;">Attendance summary by employee</h2>
-    @if (summaryRows.length === 0) {
-      <div class="empty-state">No data yet. Add employees and mark attendance.</div>
-    } @else {
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Employee ID</th>
-              <th>Name</th>
-              <th>Department</th>
-              <th>Present days</th>
-              <th>Total records</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of summaryRows; track row.id) {
-              <tr>
-                <td>{{ row.employee_id }}</td>
-                <td>{{ row.full_name }}</td>
-                <td>{{ row.department }}</td>
-                <td>{{ row.present_days }}</td>
-                <td>{{ row.total_records }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+  <div style="margin-bottom: 1.5rem;">
+    <!-- Overall Distribution -->
+    <div class="card" style="margin-bottom: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+          <h2 style="margin: 0; font-size: 1.2rem; color: #f1f5f9;">📊 Overall Attendance Distribution</h2>
+          <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Summary of all attendance records</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.1rem; font-weight: bold; color: #34d399;">{{ summary?.totalPresentDays }} Present</div>
+          <div style="font-size: 0.9rem; color: #f87171;">{{ summary?.totalAbsentDays }} Absent</div>
+        </div>
       </div>
-    }
+      <div style="position: relative; height: 300px;">
+        <canvas #doughnutChartCanvas></canvas>
+      </div>
+    </div>
   </div>
 
+  <!-- Employee-wise Attendance -->
   <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
       <div>
-        <label style="color: #94a3b8; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Select Date:</label>
+        <h2 style="margin: 0; font-size: 1.4rem; color: #f1f5f9; font-weight: 600;">📈 Employee-wise Attendance</h2>
+        <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Detailed view of presence/absence per employee</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
         <input 
           type="date" 
           #dateInput 
           (change)="onDateChange(dateInput.value)" 
           [value]="selectedDate"
-          style="padding: 0.6rem 0.8rem; background: #334155; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 6px; color: #f1f5f9; font-size: 0.9rem; cursor: pointer;"
+          style="padding: 0.5rem; background: #334155; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 6px; color: #f1f5f9;"
         />
+        <button (click)="refreshData()" style="padding: 0.5rem 1rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄</button>
       </div>
-      <button (click)="refreshData()" style="padding: 0.6rem 1.2rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; align-self: flex-end;">🔄 Refresh</button>
     </div>
-    <div style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.5rem 0; font-size: 1.4rem; color: #f1f5f9; font-weight: 600;">📊 Overall Attendance Distribution</h2>
-      <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Company-wide Present vs Absent</p>
-    </div>
-    <div style="position: relative; width: 100%; height: 400px; background: #0f172a; border-radius: 8px; padding: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); border: 1px solid rgba(148, 163, 184, 0.1);">
-      <canvas #doughnutChartCanvas></canvas>
-    </div>
-  </div>
-
-  <div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 2rem; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(56, 189, 248, 0.2); margin-top: 1.5rem;">
-    <div style="margin-bottom: 1.5rem;">
-      <h2 style="margin: 0 0 0.5rem 0; font-size: 1.4rem; color: #f1f5f9; font-weight: 600;">📈 Employee-wise Attendance</h2>
-      <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Present and Absent Days for Each Employee</p>
-    </div>
-    <div style="position: relative; width: 100%; height: 450px; background: #0f172a; border-radius: 8px; padding: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.3); border: 1px solid rgba(148, 163, 184, 0.1);">
+    
+    <div style="position: relative; height: 400px; margin-bottom: 2rem;">
       <canvas #barChartCanvas></canvas>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Present</th>
+            <th>Absent</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of summaryRows; track row.id) {
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: #f1f5f9;">{{ row.full_name }}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">ID: {{ row.employee_id }}</div>
+              </td>
+              <td>{{ row.department }}</td>
+              <td style="color: #34d399; font-weight: 600;">{{ row.present_days }}</td>
+              <td style="color: #f87171;">{{ row.total_records - row.present_days }}</td>
+              <td>
+                <div style="width: 100px; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-bottom: 4px;">
+                  <div [style.width.%]="(row.present_days / (row.total_records || 1)) * 100" style="height: 100%; background: #34d399;"></div>
+                </div>
+                <span style="font-size: 0.8rem;">{{ ((row.present_days / (row.total_records || 1)) * 100).toFixed(0) }}%</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 }

@@ -84,11 +84,6 @@ import { ApiService, Department } from '../../services/api.service';
               </form>
             </div>
           }
-
-          <div class="card info-card">
-            <h3>Quick Tip</h3>
-            <p>Departments created here will automatically appear in the <strong>Add Employee</strong> dropdown for consistent data management.</p>
-          </div>
         </div>
       </div>
     </div>
