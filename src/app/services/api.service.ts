@@ -345,7 +345,20 @@ export class ApiService {
   // ========== Holidays (Local Fallback) ==========
   private getLocalHolidays(): Holiday[] {
     const data = localStorage.getItem('hrms_holidays');
-    return data ? JSON.parse(data) : [];
+    if (data) return JSON.parse(data);
+    
+    // Default Indian Holidays if nothing is set
+    const defaults: Holiday[] = [
+      { id: 101, name: 'Republic Day', date: '2026-01-26', is_national: true },
+      { id: 102, name: 'Holi', date: '2026-03-04', is_national: true },
+      { id: 103, name: 'Eid ul-Fitr', date: '2026-03-20', is_national: true },
+      { id: 104, name: 'Independence Day', date: '2026-08-15', is_national: true },
+      { id: 105, name: 'Gandhi Jayanti', date: '2026-10-02', is_national: true },
+      { id: 106, name: 'Dussehra', date: '2026-10-21', is_national: true },
+      { id: 107, name: 'Diwali', date: '2026-11-08', is_national: true },
+      { id: 108, name: 'Christmas Day', date: '2026-12-25', is_national: true }
+    ];
+    return defaults;
   }
 
   private saveLocalHolidays(holidays: Holiday[]) {
