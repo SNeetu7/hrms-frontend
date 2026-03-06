@@ -544,11 +544,12 @@ export class ReportsComponent implements OnInit, AfterViewInit {
   @ViewChild('monthlyChart') monthlyChartCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('employeeChart') employeeChartCanvas!: ElementRef<HTMLCanvasElement>;
 
-  selectedDate = this.getTodayDate();
+  selectedDate = '2026-03-05';
   currentMonth = new Date().getMonth() + 1;
   currentYear = new Date().getFullYear();
   selectedEmployeeId: number | null = null;
 
+  loadingDaily = false;
   dailyStats: DailyStatistics | null = null;
   dailyAttendanceRecords: AttendanceRecord[] = [];
   monthlyReports: AttendanceReport[] = [];
@@ -575,7 +576,6 @@ export class ReportsComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.loadEmployees();
-    this.loadDailyStatistics();
     this.loadMonthlyReport();
     this.loadDepartmentStatistics();
   }
@@ -590,13 +590,14 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.api.getEmployees().subscribe({
       next: (data) => {
         this.employees = data;
-        this.loadDailyStatistics(); // Reload to match records with employees
+        this.loadDailyStatistics();
       },
       error: (err) => console.error('Error loading employees:', err)
     });
   }
 
   loadDailyStatistics() {
+    this.loadingDaily = true;
     this.api.getDailyStatistics(this.selectedDate).subscribe({
       next: (data) => {
         this.dailyStats = data;
@@ -608,18 +609,27 @@ export class ReportsComponent implements OnInit, AfterViewInit {
     this.api.getAttendance({ date: this.selectedDate }).subscribe({
       next: (data) => {
         this.dailyAttendanceRecords = data;
+        this.loadingDaily = false;
       },
-      error: (err) => console.error('Error loading daily attendance:', err)
+      error: (err) => {
+        console.error('Error loading daily attendance:', err);
+        this.loadingDaily = false;
+      }
     });
   }
 
   getDailyEmployeeStatus() {
+    if (!this.employees.length) return [];
     return this.employees.map(emp => {
       const record = this.dailyAttendanceRecords.find(r => 
-        (r.employee_id === emp.id) || (r.employee === emp.id)
+        String(r.employee_id) === String(emp.id) || 
+        String(r.employee) === String(emp.id)
       );
       return {
-        ...emp,
+        id: emp.id,
+        employee_id: emp.employee_id,
+        full_name: emp.full_name,
+        department: emp.department,
         status: record ? record.status : 'Absent',
         check_in: record?.check_in_time || '-',
         check_out: record?.check_out_time || '-'

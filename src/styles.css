@@ -117,12 +117,17 @@ body {
   color: var(--text-muted);
   margin-bottom: 0.38rem;
   text-transform: uppercase;
+html {
+  color-scheme: dark;
 }
 
+:root {
+...
 .input, .select {
   width: 100%;
   border-radius: 10px;
   border: 1px solid rgba(120, 150, 255, 0.28);
+  background: #112448;
   background: linear-gradient(140deg, rgba(18, 36, 72, 0.98), rgba(13, 27, 58, 0.98));
   color: #eef4ff;
   font-size: 0.95rem;
@@ -132,10 +137,17 @@ body {
   color-scheme: dark;
 }
 
+/* More aggressive override for browser dropdowns */
+select option {
+  background-color: #070d1d !important;
+  color: #eaf0ff !important;
+}
+
 .select option {
-  background-color: #0d1730;
+  background-color: #070d1d;
   color: #eaf0ff;
 }
+
 
 .input:focus, .select:focus {
   outline: none;

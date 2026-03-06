@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ApiService, Employee, EmployeeCreate } from '../../services/api.service';
+import { ApiService, Employee, EmployeeCreate, Department } from '../../services/api.service';
 
 @Component({
   selector: 'app-employees',
@@ -15,6 +15,7 @@ export class EmployeesComponent implements OnInit {
   formError: string | null = null;
   successMessage: string | null = null;
   employees: Employee[] = [];
+  departments: Department[] = [];
   form: EmployeeCreate = {
     employee_id: '',
     full_name: '',
@@ -25,6 +26,7 @@ export class EmployeesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadList();
+    this.loadDepartments();
   }
 
   loadList(): void {
@@ -39,6 +41,13 @@ export class EmployeesComponent implements OnInit {
         this.listError = err;
         this.loading = false;
       },
+    });
+  }
+
+  loadDepartments(): void {
+    this.api.getDepartments().subscribe({
+      next: (list) => this.departments = list,
+      error: (err) => console.error('Error loading departments:', err)
     });
   }
 
