@@ -1,5 +1,8 @@
 {
   "framework": "angular",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/hrms-lite"
+  "outputDirectory": "dist/hrms-lite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

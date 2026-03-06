@@ -113,9 +113,7 @@ import { ApiService, Holiday } from '../../services/api.service';
   `,
   styles: [`
     .page-container {
-      margin-left: 272px;
-      padding: 2rem;
-      background: #070d1d;
+      padding: 0;
       min-height: 100vh;
       color: #eaf0ff;
     }

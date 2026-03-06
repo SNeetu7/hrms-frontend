@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet, SidebarComponent],
   template: `
     <div class="app-layout" [class.sidebar-open]="sidebarOpen">
       <header class="mobile-header">

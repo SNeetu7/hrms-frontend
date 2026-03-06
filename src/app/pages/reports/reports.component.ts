@@ -238,9 +238,7 @@ ChartJS.register(BarController, LineController, PieController, CategoryScale, Li
   `,
   styles: [`
     .page-container {
-      margin-left: 272px; /* Consistent with sidebar width */
-      padding: 2rem;
-      background: #070d1d;
+      padding: 0;
       min-height: 100vh;
       color: #eaf0ff;
     }
