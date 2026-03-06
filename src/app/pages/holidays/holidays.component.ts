@@ -17,68 +17,95 @@ import { ApiService, Holiday } from '../../services/api.service';
         </div>
       </div>
 
-      @if (showNewHolidayForm) {
-        <div class="card form-card">
-          <h2>Add New Holiday</h2>
-          <form (ngSubmit)="submitNewHoliday()" class="form-grid">
-            <div class="form-group">
-              <label>Holiday Name</label>
-              <input type="text" [(ngModel)]="newHoliday.name" name="name" required placeholder="e.g. Diwali">
-            </div>
-            <div class="form-group">
-              <label>Date</label>
-              <input type="date" [(ngModel)]="newHoliday.date" name="date" required>
-            </div>
-            <div class="form-group">
-              <label>Type</label>
-              <select [(ngModel)]="newHoliday.is_national" name="is_national" class="select">
-                <option [ngValue]="true">National</option>
-                <option [ngValue]="false">Company</option>
-              </select>
-            </div>
-            <div class="form-group full-width">
-              <label>Description</label>
-              <textarea [(ngModel)]="newHoliday.description" name="description" rows="2" placeholder="Brief description..."></textarea>
-            </div>
-            <div class="form-actions full-width">
-              <button type="submit" class="btn btn-success">Add Holiday</button>
-              <button type="button" (click)="toggleNewHolidayForm()" class="btn btn-secondary">Cancel</button>
-            </div>
-          </form>
-        </div>
-      }
-
-      <div class="card">
-        <h2>Holiday Calendar</h2>
-        @if (holidays.length === 0) {
-          <div class="empty-state">
-            <p>No holidays found.</p>
-            <button (click)="seedIndianHolidays()" class="btn btn-secondary btn-sm">Seed Indian Holidays (2026)</button>
+      <div class="grid-layout">
+        <!-- Calendar View -->
+        <div class="card calendar-card">
+          <div class="calendar-header">
+            <button (click)="prevMonth()" class="nav-btn">&lt;</button>
+            <h2>{{ getMonthName(viewDate) }} {{ viewDate.getFullYear() }}</h2>
+            <button (click)="nextMonth()" class="nav-btn">&gt;</button>
           </div>
-        } @else {
-          <div class="holidays-list">
-            @for (holiday of holidays; track holiday.id) {
-              <div class="holiday-item">
-                <div class="holiday-left">
-                  <div class="holiday-date">
-                    <div class="date-day">{{ getDay(holiday.date) }}</div>
-                    <div class="date-month">{{ getMonth(holiday.date) }}</div>
-                  </div>
-                </div>
-                <div class="holiday-middle">
-                  <h3>{{ holiday.name }}</h3>
-                  <p>{{ holiday.description || 'No description' }}</p>
-                  <span class="status-badge" [class.present]="!holiday.is_national" [class.absent]="holiday.is_national">
-                    {{ holiday.is_national ? '🇮🇳 National Holiday' : '🏢 Company Holiday' }}
-                  </span>
-                </div>
-                <div class="holiday-right">
-                  <button (click)="deleteHoliday(holiday.id)" class="btn btn-sm btn-danger">Delete</button>
+          
+          <div class="calendar-grid">
+            <div class="weekday">Sun</div>
+            <div class="weekday">Mon</div>
+            <div class="weekday">Tue</div>
+            <div class="weekday">Wed</div>
+            <div class="weekday">Thu</div>
+            <div class="weekday">Fri</div>
+            <div class="weekday">Sat</div>
+            
+            @for (day of calendarDays; track day.date) {
+              <div class="calendar-day" 
+                   [class.other-month]="!day.isCurrentMonth"
+                   [class.today]="isToday(day.date)"
+                   [class.has-holiday]="day.holidays.length > 0">
+                <span class="day-number">{{ day.date.getDate() }}</span>
+                <div class="day-content">
+                  @for (h of day.holidays; track h.id) {
+                    <div class="holiday-pill" [class.national]="h.is_national" [title]="h.name">
+                      {{ h.name }}
+                    </div>
+                  }
                 </div>
               </div>
             }
           </div>
-        }
+        </div>
+
+        <!-- Sidebar Actions -->
+        <div class="side-panel">
+          @if (showNewHolidayForm) {
+            <div class="card form-card">
+              <h2>Add New Holiday</h2>
+              <form (ngSubmit)="submitNewHoliday()" class="form-grid">
+                <div class="form-group">
+                  <label>Holiday Name</label>
+                  <input type="text" [(ngModel)]="newHoliday.name" name="name" required placeholder="e.g. Diwali">
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" [(ngModel)]="newHoliday.date" name="date" required>
+                </div>
+                <div class="form-group">
+                  <label>Type</label>
+                  <select [(ngModel)]="newHoliday.is_national" name="is_national" class="select">
+                    <option [ngValue]="true">National</option>
+                    <option [ngValue]="false">Company</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-success">Save</button>
+                  <button type="button" (click)="toggleNewHolidayForm()" class="btn btn-secondary">Cancel</button>
+                </div>
+              </form>
+            </div>
+          }
+
+          <div class="card upcoming-card">
+            <h2>Upcoming Holidays</h2>
+            <div class="upcoming-list">
+              @if (upcomingHolidays.length === 0) {
+                <div class="empty-state">No upcoming holidays</div>
+              }
+              @for (h of upcomingHolidays; track h.id) {
+                <div class="upcoming-item">
+                  <div class="u-date">
+                    <span class="u-day">{{ getDay(h.date) }}</span>
+                    <span class="u-month">{{ getMonth(h.date) }}</span>
+                  </div>
+                  <div class="u-info">
+                    <h4>{{ h.name }}</h4>
+                    <span class="u-type" [class.national]="h.is_national">
+                      {{ h.is_national ? 'National' : 'Company' }}
+                    </span>
+                  </div>
+                  <button (click)="deleteHoliday(h.id)" class="delete-btn">×</button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -96,13 +123,12 @@ import { ApiService, Holiday } from '../../services/api.service';
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
-      gap: 1rem;
     }
 
     .page-header h1 {
       margin: 0;
       color: #f7faff;
-      font-size: clamp(1.35rem, 1.2rem + 0.8vw, 1.95rem);
+      font-size: 1.8rem;
       font-weight: 800;
     }
 
@@ -111,149 +137,193 @@ import { ApiService, Holiday } from '../../services/api.service';
       gap: 1rem;
     }
 
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 1.5rem;
+    }
+
     .card {
       background: linear-gradient(160deg, rgba(16, 31, 61, 0.96), rgba(12, 24, 48, 0.96));
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 14px;
       box-shadow: 0 14px 38px rgba(2, 8, 24, 0.45);
       border: 1px solid rgba(120, 150, 255, 0.2);
-      backdrop-filter: blur(6px);
+    }
+
+    /* Calendar Styles */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1.5rem;
     }
 
-    .card h2 {
-      margin-top: 0;
-      color: #f1f5f9;
-      font-size: 1.2rem;
-      border-bottom: 1px solid rgba(120, 150, 255, 0.1);
-      padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
+    .calendar-header h2 {
+      margin: 0;
+      color: #85a0ff;
+      font-size: 1.4rem;
+    }
+
+    .nav-btn {
+      background: rgba(95, 124, 255, 0.1);
+      border: 1px solid rgba(120, 150, 255, 0.2);
+      color: #eaf0ff;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      background: rgba(120, 150, 255, 0.1);
+      border: 1px solid rgba(120, 150, 255, 0.1);
+    }
+
+    .weekday {
+      padding: 1rem 0.5rem;
+      text-align: center;
+      background: #0d1730;
+      color: #9fb0d4;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .calendar-day {
+      background: #0d1730;
+      min-height: 100px;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .calendar-day.other-month {
+      opacity: 0.3;
+    }
+
+    .calendar-day.today {
+      background: rgba(95, 124, 255, 0.08);
+      border: 1px solid rgba(95, 124, 255, 0.3);
+    }
+
+    .day-number {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #9fb0d4;
+    }
+
+    .today .day-number {
+      color: #5f7cff;
+      font-weight: 800;
+    }
+
+    .day-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .holiday-pill {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(51, 208, 155, 0.15);
+      color: #33d09b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 3px solid #33d09b;
+    }
+
+    .holiday-pill.national {
+      background: rgba(255, 125, 134, 0.15);
+      color: #ff7d86;
+      border-left-color: #ff7d86;
+    }
+
+    /* Upcoming & Form */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
     .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .form-group {
       display: flex;
       flex-direction: column;
-    }
-
-    .form-group.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .form-group label {
-      font-size: 0.82rem;
-      letter-spacing: 0.03em;
-      font-weight: 700;
-      color: #9fb0d4;
-      margin-bottom: 0.38rem;
-      text-transform: uppercase;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      padding: 0.65rem 0.78rem;
-      background: #112448;
-      border: 1px solid rgba(120, 150, 255, 0.28);
-      border-radius: 10px;
-      color: #eef4ff;
-      font-size: 0.95rem;
-      outline: none;
-      color-scheme: dark;
-    }
-
-    .form-actions {
-      display: flex;
       gap: 1rem;
     }
 
-    .holidays-list {
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #9fb0d4;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.6rem;
+      background: #112448;
+      border: 1px solid rgba(120, 150, 255, 0.2);
+      border-radius: 8px;
+      color: #fff;
+      outline: none;
+    }
+
+    .upcoming-list {
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1rem;
+      margin-top: 1rem;
     }
 
-    .holiday-item {
+    .upcoming-item {
       display: flex;
-      gap: 1.5rem;
-      padding: 1.25rem;
-      background: rgba(95, 124, 255, 0.05);
-      border: 1px solid rgba(120, 150, 255, 0.15);
-      border-radius: 12px;
-      transition: all 0.3s;
       align-items: center;
-    }
-
-    .holiday-item:hover {
-      background: rgba(95, 124, 255, 0.1);
-      border-color: rgba(120, 150, 255, 0.3);
-      transform: translateY(-2px);
-    }
-
-    .holiday-left {
-      flex-shrink: 0;
-    }
-
-    .holiday-date {
-      background: linear-gradient(140deg, #8ca5ff, #6f8aff);
+      gap: 1rem;
       padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
       border-radius: 10px;
+      position: relative;
+    }
+
+    .u-date {
+      background: #5f7cff;
+      color: #fff;
+      padding: 0.4rem;
+      border-radius: 8px;
       text-align: center;
-      color: #0b1531;
-      min-width: 65px;
+      min-width: 45px;
     }
 
-    .date-day {
-      font-size: 1.6rem;
-      font-weight: 800;
-      line-height: 1;
-    }
+    .u-day { display: block; font-weight: 800; font-size: 1.1rem; line-height: 1; }
+    .u-month { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; }
 
-    .date-month {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-top: 0.2rem;
-    }
+    .u-info h4 { margin: 0; font-size: 0.9rem; color: #f7faff; }
+    .u-type { font-size: 0.7rem; color: #33d09b; }
+    .u-type.national { color: #ff7d86; }
 
-    .holiday-middle {
-      flex: 1;
-    }
-
-    .holiday-middle h3 {
-      margin: 0 0 0.4rem 0;
-      color: #f7faff;
-      font-size: 1.1rem;
-    }
-
-    .holiday-middle p {
-      margin: 0 0 0.75rem 0;
-      color: #9fb0d4;
-      font-size: 0.85rem;
-    }
-
-    .status-badge {
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .status-badge.present {
-      background: rgba(51, 208, 155, 0.15);
-      color: #33d09b;
-    }
-
-    .status-badge.absent {
-      background: rgba(255, 125, 134, 0.15);
+    .delete-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
       color: #ff7d86;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.5;
     }
+
+    .delete-btn:hover { opacity: 1; }
 
     .btn {
       padding: 0.6rem 1.1rem;
@@ -262,59 +332,23 @@ import { ApiService, Holiday } from '../../services/api.service';
       cursor: pointer;
       font-weight: 700;
       transition: all 0.2s;
-      font-size: 0.9rem;
     }
 
-    .btn-primary {
-      background: linear-gradient(140deg, #8ca5ff, #6f8aff);
-      color: #0b1531;
-    }
-
-    .btn-success {
-      background: #33d09b;
-      color: #0b1531;
-    }
-
-    .btn-danger {
-      background: rgba(255, 125, 134, 0.2);
-      color: #ff7d86;
-      border: 1px solid rgba(255, 125, 134, 0.3);
-    }
-
-    .btn-secondary {
-      background: rgba(148, 163, 184, 0.2);
-      color: #cbd5e1;
-    }
-
-    .btn-sm {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.8rem;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: #9fb0d4;
-      font-style: italic;
-    }
+    .btn-primary { background: #5f7cff; color: #fff; }
+    .btn-secondary { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+    .btn-success { background: #33d09b; color: #0b1531; width: 100%; }
 
     @media (max-width: 1024px) {
-      .page-container {
-        margin-left: 0;
-        padding: 1.5rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .holiday-item {
-        flex-direction: row;
-        text-align: left;
-      }
+      .page-container { margin-left: 0; }
+      .grid-layout { grid-template-columns: 1fr; }
     }
   `]
 })
 export class HolidaysComponent implements OnInit {
   holidays: Holiday[] = [];
+  upcomingHolidays: Holiday[] = [];
+  viewDate = new Date();
+  calendarDays: any[] = [];
   showNewHolidayForm = false;
 
   newHoliday = {
@@ -333,10 +367,86 @@ export class HolidaysComponent implements OnInit {
   loadHolidays() {
     this.api.getHolidays().subscribe({
       next: (data) => {
-        this.holidays = data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      },
-      error: (err) => console.error('Error loading holidays:', err)
+        this.holidays = data;
+        this.generateCalendar();
+        this.updateUpcoming();
+      }
     });
+  }
+
+  updateUpcoming() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.upcomingHolidays = this.holidays
+      .filter(h => new Date(h.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5);
+  }
+
+  generateCalendar() {
+    const year = this.viewDate.getFullYear();
+    const month = this.viewDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const days = [];
+    
+    // Previous month padding
+    const prevLastDay = new Date(year, month, 0);
+    for (let i = firstDay.getDay(); i > 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, prevLastDay.getDate() - i + 1),
+        isCurrentMonth: false,
+        holidays: []
+      });
+    }
+    
+    // Current month days
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      const d = new Date(year, month, i);
+      days.push({
+        date: d,
+        isCurrentMonth: true,
+        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
+      });
+    }
+    
+    // Next month padding
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      days.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false,
+        holidays: []
+      });
+    }
+    
+    this.calendarDays = days;
+  }
+
+  isSameDay(d1: Date, d2: Date) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }
+
+  isToday(d: Date) {
+    return this.isSameDay(d, new Date());
+  }
+
+  prevMonth() {
+    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() - 1, 1);
+    this.generateCalendar();
+  }
+
+  nextMonth() {
+    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + 1, 1);
+    this.generateCalendar();
+  }
+
+  getMonthName(d: Date) {
+    return d.toLocaleString('default', { month: 'long' });
   }
 
   toggleNewHolidayForm() {
@@ -349,8 +459,7 @@ export class HolidaysComponent implements OnInit {
         this.loadHolidays();
         this.showNewHolidayForm = false;
         this.newHoliday = { name: '', date: '', description: '', is_national: true };
-      },
-      error: (err) => console.error('Error adding holiday:', err)
+      }
     });
   }
 
@@ -374,10 +483,9 @@ export class HolidaysComponent implements OnInit {
   }
 
   deleteHoliday(id: number) {
-    if (confirm('Are you sure you want to delete this holiday?')) {
+    if (confirm('Delete this holiday?')) {
       this.api.deleteHoliday(id).subscribe({
-        next: () => this.loadHolidays(),
-        error: (err) => console.error('Error deleting holiday:', err)
+        next: () => this.loadHolidays()
       });
     }
   }
@@ -387,7 +495,6 @@ export class HolidaysComponent implements OnInit {
   }
 
   getMonth(dateString: string): string {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return months[new Date(dateString).getMonth()];
+    return new Date(dateString).toLocaleString('default', { month: 'short' });
   }
 }
