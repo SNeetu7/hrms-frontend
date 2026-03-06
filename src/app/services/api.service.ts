@@ -417,12 +417,71 @@ export class ApiService {
     );
   }
 
-  getLeavesSummary(employeeId?: number): Observable<any[]> {
-    let params = new HttpParams();
-    if (employeeId) params = params.set('employee_id', employeeId);
-    return this.http.get<any[]>(API_BASE + '/api/reports/leaves/summary', { params }).pipe(
-      catchError((err) => throwError(() => this.getErrorMessage(err)))
-    );
+  // ========== Leaves (Local Fallback) ==========
+  private getLocalLeaves(): Leave[] {
+    const data = localStorage.getItem('hrms_leaves');
+    return data ? JSON.parse(data) : [];
+  }
+
+  private saveLocalLeaves(leaves: Leave[]) {
+    localStorage.setItem('hrms_leaves', JSON.stringify(leaves));
+  }
+
+  getLeaves(params?: { employeeId?: number; status?: string }): Observable<Leave[]> {
+    return this.http.get<Leave[]>(API_BASE + '/api/leaves').pipe(
+      catchError(() => {
+        let list = this.getLocalLeaves();
+        if (params?.employeeId) list = list.filter(l => l.employee_id === params.employeeId);
+        if (params?.status) list = list.filter(l => l.status === params.status);
+        return [list];
+      })
+    ) as any;
+  }
+
+  getLeaveTypes(): Observable<LeaveType[]> {
+    const defaults: LeaveType[] = [
+      { id: 1, name: 'Sick Leave' },
+      { id: 2, name: 'Casual Leave' },
+      { id: 3, name: 'Annual Leave' }
+    ];
+    return this.http.get<LeaveType[]>(API_BASE + '/api/leaves/types').pipe(
+      catchError(() => [defaults])
+    ) as any;
+  }
+
+  requestLeave(body: LeaveCreate): Observable<Leave> {
+    const leaves = this.getLocalLeaves();
+    const newLeave: Leave = { 
+      ...body, 
+      id: Date.now(), 
+      status: 'Pending', 
+      created_at: new Date().toISOString() 
+    };
+    leaves.push(newLeave);
+    this.saveLocalLeaves(leaves);
+    return new Observable(obs => {
+      obs.next(newLeave);
+      obs.complete();
+    });
+  }
+
+  updateLeave(id: number, body: { status: string }): Observable<Leave> {
+    let leaves = this.getLocalLeaves();
+    const idx = leaves.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      leaves[idx] = { ...leaves[idx], status: body.status };
+      this.saveLocalLeaves(leaves);
+    }
+    return new Observable(obs => {
+      obs.next(leaves[idx]);
+      obs.complete();
+    });
+  }
+
+  getLeaveBalance(employeeId: number): Observable<LeaveBalance[]> {
+    return this.http.get<LeaveBalance[]>(API_BASE + '/api/leaves/balance/' + employeeId).pipe(
+      catchError(() => [[]])
+    ) as any;
   }
 
   getEmployeeAttendanceReport(employeeId: number, month?: number, year?: number): Observable<any> {

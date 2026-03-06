@@ -57,9 +57,10 @@ import { ApiService, Department } from '../../services/api.service';
               <form (ngSubmit)="editingDept ? submitEditDept() : submitNewDept()" class="form-grid">
                 <div class="form-group">
                   <label>Department Name</label>
-                  <input type="text" [(ngModel)]="editingDept ? editingDept.name : newDept.name" name="name" required placeholder="e.g. Engineering">
-                  
-                  @if (!editingDept) {
+                  @if (editingDept) {
+                    <input type="text" [(ngModel)]="editingDept.name" name="name" required>
+                  } @else {
+                    <input type="text" [(ngModel)]="newDept.name" name="name" required placeholder="e.g. Engineering">
                     <div class="suggestions">
                       <span (click)="newDept.name='IT'" class="suggestion-chip">IT</span>
                       <span (click)="newDept.name='Sales'" class="suggestion-chip">Sales</span>
@@ -70,7 +71,11 @@ import { ApiService, Department } from '../../services/api.service';
                 </div>
                 <div class="form-group">
                   <label>Description</label>
-                  <textarea [(ngModel)]="editingDept ? editingDept.description : newDept.description" name="description" rows="3"></textarea>
+                  @if (editingDept) {
+                    <textarea [(ngModel)]="editingDept.description" name="description" rows="3"></textarea>
+                  } @else {
+                    <textarea [(ngModel)]="newDept.description" name="description" rows="3"></textarea>
+                  }
                 </div>
                 <div class="form-actions">
                   <button type="submit" class="btn btn-success">{{ editingDept ? 'Save Changes' : 'Create Department' }}</button>
