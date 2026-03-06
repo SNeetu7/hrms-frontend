@@ -127,6 +127,13 @@ body {
   font-size: 0.95rem;
   padding: 0.65rem 0.78rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.select option {
+  background-color: #0d1730; /* Dark theme background */
+  color: #eaf0ff;
+  padding: 10px;
 }
 
 .input:focus, .select:focus {
