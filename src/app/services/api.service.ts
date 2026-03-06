@@ -293,7 +293,15 @@ export class ApiService {
   // ========== Departments (Local Fallback) ==========
   private getLocalDepts(): Department[] {
     const data = localStorage.getItem('hrms_depts');
-    return data ? JSON.parse(data) : [];
+    if (data) return JSON.parse(data);
+    
+    const defaults: Department[] = [
+      { id: 1, name: 'IT Department', description: 'Technical & Infrastructure' },
+      { id: 2, name: 'Human Resources', description: 'People & Culture' },
+      { id: 3, name: 'Finance', description: 'Accounts & Payroll' },
+      { id: 4, name: 'Marketing', description: 'Branding & Social' }
+    ];
+    return defaults;
   }
 
   private saveLocalDepts(depts: Department[]) {
@@ -455,7 +463,15 @@ export class ApiService {
   // ========== Leaves (Local Fallback) ==========
   private getLocalLeaves(): Leave[] {
     const data = localStorage.getItem('hrms_leaves');
-    return data ? JSON.parse(data) : [];
+    if (data) return JSON.parse(data);
+
+    // Default leaves for approval
+    const defaults: Leave[] = [
+      { id: 201, employee_id: 1, leave_type_id: 1, start_date: '2026-03-10', end_date: '2026-03-12', reason: 'Medical checkup', status: 'Pending' },
+      { id: 202, employee_id: 2, leave_type_id: 2, start_date: '2026-03-15', end_date: '2026-03-15', reason: 'Personal work', status: 'Pending' },
+      { id: 203, employee_id: 1, leave_type_id: 3, start_date: '2026-04-01', end_date: '2026-04-05', reason: 'Family vacation', status: 'Pending' }
+    ];
+    return defaults;
   }
 
   private saveLocalLeaves(leaves: Leave[]) {
@@ -520,7 +536,15 @@ export class ApiService {
 
   getLeaveBalance(employeeId: number): Observable<LeaveBalance[]> {
     return this.http.get<LeaveBalance[]>(API_BASE + '/api/leaves/balance/' + employeeId).pipe(
-      catchError(() => of([]))
+      catchError(() => {
+        // Provide mock balance if API fails
+        const mockBalance: LeaveBalance[] = [
+          { id: 1, employee_id: employeeId, leave_type_id: 1, total_days: 12, used_days: 2, available_days: 10, year: 2026 },
+          { id: 2, employee_id: employeeId, leave_type_id: 2, total_days: 10, used_days: 1, available_days: 9, year: 2026 },
+          { id: 3, employee_id: employeeId, leave_type_id: 3, total_days: 20, used_days: 5, available_days: 15, year: 2026 }
+        ];
+        return of(mockBalance);
+      })
     );
   }
 

@@ -108,9 +108,23 @@ import { ApiService, Leave, LeaveType, LeaveBalance, Employee } from '../../serv
       </div>
 
       <div class="card">
-        <h2>Leave Balances</h2>
-        @if (leaveBalances.length === 0) {
-          <div class="empty-state">No leave balances available</div>
+        <div class="balance-header">
+          <h2>Leave Balances</h2>
+          <div class="employee-selector">
+            <label>Select Employee: </label>
+            <select [(ngModel)]="selectedEmployeeId" (change)="loadLeaveBalances()" class="select-sm">
+              <option [value]="0">-- Select --</option>
+              @for (emp of employees; track emp.id) {
+                <option [value]="emp.id">{{ emp.full_name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        
+        @if (selectedEmployeeId === 0) {
+          <div class="empty-state">Select an employee to view their available leave balance</div>
+        } @else if (leaveBalances.length === 0) {
+          <div class="empty-state">No leave balance found for this employee</div>
         } @else {
           <div class="balance-grid">
             @for (balance of leaveBalances; track balance.id) {
@@ -243,6 +257,35 @@ import { ApiService, Leave, LeaveType, LeaveBalance, Employee } from '../../serv
       gap: 1.5rem;
     }
 
+    .balance-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid rgba(120, 150, 255, 0.2);
+      padding-bottom: 0.7rem;
+    }
+
+    .balance-header h2 {
+      margin: 0 !important;
+      border-bottom: none !important;
+    }
+
+    .employee-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .select-sm {
+      padding: 0.4rem 0.8rem;
+      background: var(--bg-input);
+      border: 1px solid rgba(120, 150, 255, 0.28);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
     .balance-card {
       background: rgba(95, 124, 255, 0.1);
       padding: 1.15rem;
@@ -331,6 +374,8 @@ export class LeavesComponent implements OnInit {
     reason: ''
   };
 
+  selectedEmployeeId = 0;
+
   constructor(private api: ApiService) {}
 
   ngOnInit() {
@@ -377,8 +422,8 @@ export class LeavesComponent implements OnInit {
   }
 
   loadLeaveBalances() {
-    if (this.newLeave.employee_id) {
-      this.api.getLeaveBalance(this.newLeave.employee_id).subscribe({
+    if (this.selectedEmployeeId) {
+      this.api.getLeaveBalance(this.selectedEmployeeId).subscribe({
         next: (data) => {
           this.leaveBalances = data;
         },
