@@ -26,6 +26,10 @@ html, body {
   min-height: 100%;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font);
   color: var(--text);
@@ -117,12 +121,8 @@ body {
   color: var(--text-muted);
   margin-bottom: 0.38rem;
   text-transform: uppercase;
-html {
-  color-scheme: dark;
 }
 
-:root {
-...
 .input, .select {
   width: 100%;
   border-radius: 10px;
@@ -147,7 +147,6 @@ select option {
   background-color: #070d1d;
   color: #eaf0ff;
 }
-
 
 .input:focus, .select:focus {
   outline: none;
