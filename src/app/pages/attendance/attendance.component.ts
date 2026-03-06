@@ -30,7 +30,10 @@ import { ApiService, Employee, AttendanceRecord, AttendanceCreate } from '../../
         </div>
         <div class="form-group">
           <label class="label">Date</label>
-          <input type="date" class="input" [(ngModel)]="markForm.date" name="date" required />
+          <input type="date" class="input" [(ngModel)]="markForm.date" name="date" required (change)="onDateChange()" />
+          @if (isSundaySelected) {
+            <small style="color: #ff7d86; display: block; margin-top: 4px;">ℹ️ Selected date is a Sunday (Holiday)</small>
+          }
         </div>
         <div class="form-group">
           <label class="label">Status</label>
@@ -100,6 +103,7 @@ export class AttendanceComponent implements OnInit {
   markError: string | null = null;
   filterEmployeeId: number | null = null;
   filterDate: string | null = null;
+  isSundaySelected = false;
   markForm: AttendanceCreate = {
     employee: 0 as unknown as number,
     employee_id: 0 as unknown as number,
@@ -107,7 +111,9 @@ export class AttendanceComponent implements OnInit {
     status: 'Present',
   };
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) {
+    this.onDateChange(); // Initial check
+  }
 
   ngOnInit(): void {
     this.api.getEmployees().subscribe({
@@ -119,6 +125,13 @@ export class AttendanceComponent implements OnInit {
       },
     });
     this.loadAttendance();
+  }
+
+  onDateChange(): void {
+    if (this.markForm.date) {
+      const selected = new Date(this.markForm.date);
+      this.isSundaySelected = selected.getDay() === 0;
+    }
   }
 
   loadAttendance(): void {

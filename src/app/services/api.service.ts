@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, forkJoin, map, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, throwError, of } from 'rxjs';
 
 const API_BASE = 'https://etharabackend-phi.vercel.app';
 
@@ -181,9 +181,24 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   // ========== Employees ==========
+  private getLocalEmployees(): Employee[] {
+    const data = localStorage.getItem('hrms_employees');
+    return data ? JSON.parse(data) : [];
+  }
+
+  private saveLocalEmployees(employees: Employee[]) {
+    localStorage.setItem('hrms_employees', JSON.stringify(employees));
+  }
+
   getEmployees(): Observable<Employee[]> {
     return this.http.get<Employee[]>(API_BASE + '/api/employees/').pipe(
-      catchError((err) => throwError(() => this.getErrorMessage(err)))
+      map(employees => {
+        this.saveLocalEmployees(employees);
+        return employees;
+      }),
+      catchError(() => {
+        return of(this.getLocalEmployees());
+      })
     );
   }
 
@@ -200,6 +215,13 @@ export class ApiService {
       email: body.email,
       department: body.department ?? String(body.department_id ?? ''),
     };
+    
+    // Also save locally for fallback
+    const employees = this.getLocalEmployees();
+    const newEmp = { ...body, id: Date.now() } as Employee;
+    employees.push(newEmp);
+    this.saveLocalEmployees(employees);
+
     return this.http.post<Employee>(API_BASE + '/api/employees/', payload).pipe(
       catchError((err) => throwError(() => this.getErrorMessage(err)))
     );
@@ -282,9 +304,9 @@ export class ApiService {
     return this.http.get<Department[]>(API_BASE + '/api/departments').pipe(
       catchError(() => {
         // If 404 or error, return local data
-        return [this.getLocalDepts()];
+        return of(this.getLocalDepts());
       })
-    ) as any;
+    );
   }
 
   addDepartment(body: DepartmentCreate): Observable<Department> {
@@ -332,8 +354,8 @@ export class ApiService {
 
   getHolidays(): Observable<Holiday[]> {
     return this.http.get<Holiday[]>(API_BASE + '/api/holidays').pipe(
-      catchError(() => [this.getLocalHolidays()])
-    ) as any;
+      catchError(() => of(this.getLocalHolidays()))
+    );
   }
 
   addHoliday(body: HolidayCreate): Observable<Holiday> {
@@ -428,14 +450,19 @@ export class ApiService {
   }
 
   getLeaves(params?: { employeeId?: number; status?: string }): Observable<Leave[]> {
-    return this.http.get<Leave[]>(API_BASE + '/api/leaves').pipe(
+    return this.http.get<Leave[]>(API_BASE + '/api/leaves/').pipe(
+      map(leaves => leaves.map(l => ({
+        ...l,
+        employee_id: l.employee_id ?? (l as any).employee,
+        leave_type_id: l.leave_type_id ?? (l as any).leave_type
+      }))),
       catchError(() => {
         let list = this.getLocalLeaves();
         if (params?.employeeId) list = list.filter(l => l.employee_id === params.employeeId);
         if (params?.status) list = list.filter(l => l.status === params.status);
-        return [list];
+        return of(list);
       })
-    ) as any;
+    );
   }
 
   getLeaveTypes(): Observable<LeaveType[]> {
@@ -445,8 +472,8 @@ export class ApiService {
       { id: 3, name: 'Annual Leave' }
     ];
     return this.http.get<LeaveType[]>(API_BASE + '/api/leaves/types').pipe(
-      catchError(() => [defaults])
-    ) as any;
+      catchError(() => of(defaults))
+    );
   }
 
   requestLeave(body: LeaveCreate): Observable<Leave> {
@@ -480,8 +507,8 @@ export class ApiService {
 
   getLeaveBalance(employeeId: number): Observable<LeaveBalance[]> {
     return this.http.get<LeaveBalance[]>(API_BASE + '/api/leaves/balance/' + employeeId).pipe(
-      catchError(() => [[]])
-    ) as any;
+      catchError(() => of([]))
+    );
   }
 
   getEmployeeAttendanceReport(employeeId: number, month?: number, year?: number): Observable<any> {

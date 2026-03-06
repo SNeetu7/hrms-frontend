@@ -39,12 +39,13 @@ import { ApiService, Holiday } from '../../services/api.service';
               <div class="calendar-day" 
                    [class.other-month]="!day.isCurrentMonth"
                    [class.today]="isToday(day.date)"
+                   [class.is-sunday]="day.date.getDay() === 0"
                    [class.has-holiday]="day.holidays.length > 0"
                    [class.national]="hasNationalHoliday(day.holidays)">
                 <span class="day-number">{{ day.date.getDate() }}</span>
                 <div class="day-content">
                   @for (h of day.holidays; track h.id) {
-                    <div class="holiday-pill" [class.national]="h.is_national" [title]="h.name">
+                    <div class="holiday-pill" [class.national]="h.is_national" [class.weekly-off]="h.id === -1" [title]="h.name">
                       {{ h.name }}
                     </div>
                   }
@@ -90,7 +91,7 @@ import { ApiService, Holiday } from '../../services/api.service';
                 <div class="empty-state">No upcoming holidays</div>
               }
               @for (h of upcomingHolidays; track h.id) {
-                <div class="upcoming-item">
+                <div class="upcoming-item" *ngIf="h.id !== -1">
                   <div class="u-date">
                     <span class="u-day">{{ getDay(h.date) }}</span>
                     <span class="u-month">{{ getMonth(h.date) }}</span>
@@ -208,6 +209,14 @@ import { ApiService, Holiday } from '../../services/api.service';
       opacity: 0.3;
     }
 
+    .calendar-day.is-sunday {
+      background: rgba(255, 125, 134, 0.03);
+    }
+
+    .calendar-day.is-sunday .day-number {
+      color: #ff7d86;
+    }
+
     .calendar-day.has-holiday {
       background: rgba(51, 208, 153, 0.08);
       box-shadow: inset 0 0 15px rgba(51, 208, 153, 0.15);
@@ -269,6 +278,13 @@ import { ApiService, Holiday } from '../../services/api.service';
       background: rgba(255, 125, 134, 0.15);
       color: #ff7d86;
       border-left-color: #ff7d86;
+    }
+
+    .holiday-pill.weekly-off {
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+      border-left-color: #94a3b8;
+      font-style: italic;
     }
 
     /* Upcoming & Form */
@@ -423,7 +439,7 @@ export class HolidaysComponent implements OnInit {
       days.push({
         date: d,
         isCurrentMonth: false,
-        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
+        holidays: this.getHolidaysForDay(d)
       });
     }
     
@@ -433,7 +449,7 @@ export class HolidaysComponent implements OnInit {
       days.push({
         date: d,
         isCurrentMonth: true,
-        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
+        holidays: this.getHolidaysForDay(d)
       });
     }
     
@@ -444,12 +460,106 @@ export class HolidaysComponent implements OnInit {
       days.push({
         date: d,
         isCurrentMonth: false,
-        holidays: this.holidays.filter(h => this.isSameDay(new Date(h.date), d))
+        holidays: this.getHolidaysForDay(d)
       });
     }
     
     this.calendarDays = days;
   }
+
+  getHolidaysForDay(d: Date): any[] {
+    const dayHolidays = this.holidays.filter(h => this.isSameDay(new Date(h.date), d));
+    
+    // Add Sunday as a holiday if it's Sunday
+    if (d.getDay() === 0) {
+      dayHolidays.push({
+        id: -1, // Special ID for weekly off
+        name: 'Sunday (Weekly Off)',
+        date: d.toISOString(),
+        is_national: false
+      });
+    }
+    
+    return dayHolidays;
+  }
+
+  hasNationalHoliday(holidays: any[]): boolean {
+    return holidays.some(h => h.is_national);
+  }
+
+  isSameDay(d1: Date, d2: Date) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }
+
+  isToday(d: Date) {
+    return this.isSameDay(d, new Date());
+  }
+
+  prevMonth() {
+    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() - 1, 1);
+    this.generateCalendar();
+  }
+
+  nextMonth() {
+    this.viewDate = new Date(this.viewDate.getFullYear(), this.viewDate.getMonth() + 1, 1);
+    this.generateCalendar();
+  }
+
+  getMonthName(d: Date) {
+    return d.toLocaleString('default', { month: 'long' });
+  }
+
+  toggleNewHolidayForm() {
+    this.showNewHolidayForm = !this.showNewHolidayForm;
+  }
+
+  submitNewHoliday() {
+    this.api.addHoliday(this.newHoliday).subscribe({
+      next: () => {
+        this.loadHolidays();
+        this.showNewHolidayForm = false;
+        this.newHoliday = { name: '', date: '', description: '', is_national: true };
+      }
+    });
+  }
+
+  seedIndianHolidays() {
+    const indianHolidays = [
+      { name: 'Republic Day', date: '2026-01-26', description: 'National Holiday', is_national: true },
+      { name: 'Holi', date: '2026-03-04', description: 'Festival of Colors', is_national: true },
+      { name: 'Eid ul-Fitr', date: '2026-03-20', description: 'End of Ramadan', is_national: true },
+      { name: 'Independence Day', date: '2026-08-15', description: 'National Holiday', is_national: true },
+      { name: 'Gandhi Jayanti', date: '2026-10-02', description: 'Mahatma Gandhi Birthday', is_national: true },
+      { name: 'Dussehra', date: '2026-10-21', description: 'Victory of Good over Evil', is_national: true },
+      { name: 'Diwali', date: '2026-11-08', description: 'Festival of Lights', is_national: true },
+      { name: 'Christmas Day', date: '2026-12-25', description: 'Christian Festival', is_national: true }
+    ];
+
+    indianHolidays.forEach(h => {
+      this.api.addHoliday(h).subscribe({
+        next: () => this.loadHolidays()
+      });
+    });
+  }
+
+  deleteHoliday(id: number) {
+    if (confirm('Delete this holiday?')) {
+      this.api.deleteHoliday(id).subscribe({
+        next: () => this.loadHolidays()
+      });
+    }
+  }
+
+  getDay(dateString: string): string {
+    return new Date(dateString).getDate().toString().padStart(2, '0');
+  }
+
+  getMonth(dateString: string): string {
+    return new Date(dateString).toLocaleString('default', { month: 'short' });
+  }
+}
 
   hasNationalHoliday(holidays: any[]): boolean {
     return holidays.some(h => h.is_national);

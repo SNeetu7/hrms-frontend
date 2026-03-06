@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.service';
+import { ApiService, Leave, LeaveType, LeaveBalance, Employee } from '../../services/api.service';
 
 @Component({
   selector: 'app-leaves',
@@ -21,13 +21,18 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
           <h2>Request New Leave</h2>
           <form (ngSubmit)="submitNewLeave()" class="form-grid">
             <div class="form-group">
-              <label>Employee ID</label>
-              <input type="number" [(ngModel)]="newLeave.employee_id" name="employee_id" required>
+              <label>Employee</label>
+              <select [(ngModel)]="newLeave.employee_id" name="employee_id" required>
+                <option [value]="0">Select Employee</option>
+                @for (emp of employees; track emp.id) {
+                  <option [value]="emp.id">{{ emp.full_name }} ({{ emp.employee_id }})</option>
+                }
+              </select>
             </div>
             <div class="form-group">
               <label>Leave Type</label>
-              <select [(ngModel)]="newLeave.leave_type_id" name="leave_type_id" required>
-                <option value="">Select Leave Type</option>
+              <select [(ngModel)]="newLeave.leave_type_id" name="leave_type_id" required (change)="onLeaveTypeChange()">
+                <option [value]="0">Select Leave Type</option>
                 @for (type of leaveTypes; track type.id) {
                   <option [value]="type.id">{{ type.name }}</option>
                 }
@@ -46,7 +51,7 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
               <textarea [(ngModel)]="newLeave.reason" name="reason" rows="3"></textarea>
             </div>
             <div class="form-actions full-width">
-              <button type="submit" class="btn btn-success">Request Leave</button>
+              <button type="submit" class="btn btn-success" [disabled]="!newLeave.employee_id || !newLeave.leave_type_id">Request Leave</button>
               <button type="button" (click)="toggleNewLeaveForm()" class="btn btn-secondary">Cancel</button>
             </div>
           </form>
@@ -76,21 +81,21 @@ import { ApiService, Leave, LeaveType, LeaveBalance } from '../../services/api.s
               <tbody>
                 @for (leave of leaves; track leave.id) {
                   <tr>
-                    <td>{{ leave.employee_id }}</td>
+                    <td>{{ getEmployeeName(leave.employee_id) }}</td>
                     <td>{{ getLeaveTypeName(leave.leave_type_id) }}</td>
                     <td>{{ leave.start_date }}</td>
                     <td>{{ leave.end_date }}</td>
                     <td>{{ leave.reason || '-' }}</td>
                     <td>
-                      <span [class]="'status status-' + leave.status">
+                      <span [class]="'status status-' + leave.status.toLowerCase()">
                         {{ leave.status }}
                       </span>
                     </td>
                     <td>
-                      @if (leave.status === 'pending') {
+                      @if (leave.status.toLowerCase() === 'pending') {
                         <div class="action-buttons">
-                          <button (click)="updateLeave(leave.id, 'approved')" class="btn btn-sm btn-success">Approve</button>
-                          <button (click)="updateLeave(leave.id, 'rejected')" class="btn btn-sm btn-danger">Reject</button>
+                          <button (click)="updateLeave(leave.id, 'Approved')" class="btn btn-sm btn-success">Approve</button>
+                          <button (click)="updateLeave(leave.id, 'Rejected')" class="btn btn-sm btn-danger">Reject</button>
                         </div>
                       }
                     </td>
@@ -314,6 +319,7 @@ export class LeavesComponent implements OnInit {
   leaves: Leave[] = [];
   leaveTypes: LeaveType[] = [];
   leaveBalances: LeaveBalance[] = [];
+  employees: Employee[] = [];
   loading = false;
   showNewLeaveForm = false;
 
@@ -328,9 +334,23 @@ export class LeavesComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.loadLeaves();
-    this.loadLeaveTypes();
-    this.loadLeaveBalances();
+    this.loading = true;
+    this.api.getLeaveTypes().subscribe(types => {
+      this.leaveTypes = types;
+      this.api.getEmployees().subscribe(emps => {
+        this.employees = emps;
+        this.loadLeaves();
+      });
+    });
+  }
+
+  loadEmployees() {
+    this.api.getEmployees().subscribe({
+      next: (data) => {
+        this.employees = data;
+      },
+      error: (err) => console.error('Error loading employees:', err)
+    });
   }
 
   loadLeaves() {
@@ -357,15 +377,32 @@ export class LeavesComponent implements OnInit {
   }
 
   loadLeaveBalances() {
-    // This would typically load for a specific employee
-    // For now, we'll keep it simple
+    if (this.newLeave.employee_id) {
+      this.api.getLeaveBalance(this.newLeave.employee_id).subscribe({
+        next: (data) => {
+          this.leaveBalances = data;
+        },
+        error: (err) => console.error('Error loading balances:', err)
+      });
+    } else {
+      this.leaveBalances = [];
+    }
+  }
+
+  onLeaveTypeChange() {
+    // Optional: add logic when leave type changes
   }
 
   toggleNewLeaveForm() {
     this.showNewLeaveForm = !this.showNewLeaveForm;
+    if (this.showNewLeaveForm) {
+      this.newLeave = { employee_id: 0, leave_type_id: 0, start_date: '', end_date: '', reason: '' };
+    }
   }
 
   submitNewLeave() {
+    if (!this.newLeave.employee_id || !this.newLeave.leave_type_id) return;
+    
     this.api.requestLeave(this.newLeave).subscribe({
       next: () => {
         this.loadLeaves();
@@ -383,7 +420,27 @@ export class LeavesComponent implements OnInit {
     });
   }
 
-  getLeaveTypeName(typeId: number): string {
-    return this.leaveTypes.find(t => t.id === typeId)?.name || 'Unknown';
+  getLeaveTypeName(typeId: any): string {
+    if (!typeId) return 'N/A';
+    const id = Number(typeId);
+    const type = this.leaveTypes.find(t => t.id === id);
+    if (type) return type.name;
+    
+    // Check if it's already a name
+    if (isNaN(id) && typeof typeId === 'string') return typeId;
+    
+    return `Type: ${typeId}`;
+  }
+
+  getEmployeeName(employeeId: any): string {
+    if (!employeeId) return 'Unknown';
+    const id = Number(employeeId);
+    const emp = this.employees.find(e => e.id === id);
+    if (emp) return emp.full_name;
+    
+    // Check if it's already a name
+    if (isNaN(id) && typeof employeeId === 'string') return employeeId;
+    
+    return `ID: ${employeeId}`;
   }
 }
