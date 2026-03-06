@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, forkJoin, map, throwError } from 'rxjs';
 
-const API_BASE = '';
+const API_BASE = 'https://etharabackend-phi.vercel.app';
 
 // ========== Employee Interfaces ==========
 export interface Employee {
